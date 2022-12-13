@@ -48,5 +48,5 @@ class Player:
         self.properties.remove(property)
         self.money += money
         other_player.properties.append(property)
-        other_player.money -= money    
+        other_player.money -= money
 

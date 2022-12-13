@@ -353,7 +353,7 @@ def check_utilities_tile(player, game_board) -> bool:
     # After the edge case, we can reduce overhead code and check if the current utility has an owner "player"
     if game_board.utilities[tile]["owner"] is None:
         print_message(message=player.name + " has discovered " + tile + "!", duration=2.25)
-        
+
         if player.money >= game_board.utilities[tile]["price"]:
             while True:
                 display_tile_info(player=player, game_board=game_board)
@@ -392,21 +392,34 @@ def check_events_tile(player, game_board):
     tile = game_board.board[player.position]
 
     if tile == "Income Tax":
+        # 1. We inform the player that they must pay taxes
+        # 2. We check if the current player can "afford" to pay taxes
+        # 2a. Check if the player will bust from this, if so, hand over all assets to the other player, and then remove this player from the game
+        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
+        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
         pass
 
     elif tile == "Chance":
+        
         pass
 
     elif tile == "Community Chest":
         pass
 
     elif tile == "Go To Jail":
+        
         pass
 
     elif tile == "Free Parking":
+        # Do nothing
         pass
 
     elif tile == "Luxury Tax":
+        # 1. We inform the player that they must pay rent
+        # 2. We check if the current player can "afford" to pay rent
+        # 2a. Check if the player will bust from this, if so, hand over all assets to the other player, and then remove this player from the game
+        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
+        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
         pass
 
 # Function is designed to discover a tile that a player
@@ -418,7 +431,6 @@ def discover_tile(player, game_board):
     elif check_railroad_tile(player=player, game_board=game_board):  return
     elif check_utilities_tile(player=player, game_board=game_board): return
     elif check_events_tile(player=player, game_board=game_board):    return
-
 
 def main():
     # This is the game loop
