@@ -290,20 +290,17 @@ class Board:
             },
         }
 
+        # This is a special tile, we calculate the rent by:
+        # 1. If a player owns 1 tile, and another player lands on it, it is 4x the amount the total number from both rolled die
+        # 2. If a player owns both tiles, and another player lands on it, it is 10x the amount the total number from both rolled die
         self.utilities = {
             "Electric Company": {
-                "price": 60,
-                "house_price": 50,
-                "rent": [2, 10, 30, 90, 160, 250],
-                "mortgage": 30,
+                "price": 150,
                 "group": "Company",
                 "owner": None
             },
             "Water Works": {
-                "price": 60,
-                "house_price": 50,
-                "rent": [2, 10, 30, 90, 160, 250],
-                "mortgage": 30,
+                "price": 150,
                 "group": "Company",
                 "owner": None
             },
