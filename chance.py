@@ -36,6 +36,6 @@ class Chance:
                     self.used_chance_cards.add(number)
                     return number
     
-    def obtain_chance_card(self, player):
+    def obtain_chance_card(self) -> int:
         number = self.__generate_random_chance_card()
-        
+        return number
