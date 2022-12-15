@@ -38,12 +38,6 @@ class Player:
         self.assets = []            # Stores possible bought properties, utilities, and railroads as their names, we cross-reference their names with the variables in board.py
         self.in_jail = False        # Player does not start in jail
         self.turns_in_jail = 0      # Player does not have any moves in jail until they land on a "Go to Jail" tile
-    
-    def update_wealth(self):
-        pass 
-
-    def pay_rent(self, property, rent):
-        self.money -= rent
 
     def inspect_player(self, current_player, players, game_board, menu):
         menu.clear_screen()

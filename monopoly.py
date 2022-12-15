@@ -107,7 +107,7 @@ def player_in_jail(player, game_board, menu) -> None:
             
             # <2> Mortgage a currently owned property
             elif choice == "2":
-                mortgage_property(player=player, game_board=game_board)
+                mortgage_property(player=player, game_board=game_board, menu=menu)
 
             # <3> Trade with another player
             elif choice == "3":
@@ -170,8 +170,11 @@ def player_in_jail(player, game_board, menu) -> None:
 # If you mortgage a property, you'll get half the value back 
 # and you retain ownership of the mortgaged property. 
 # You only need to repay that half plus 10% to unmortgage it.
-def mortgage_property(player, game_board):
-    pass
+def mortgage_property(player, game_board, menu):
+    menu.display_player_assets(player)
+    choice = input("Which asset would you like to mortgage? ")
+
+    
 
 # Selling houses is as simple as returning them to the bank, 
 # and taking the cash value for the number of houses sold.
@@ -244,7 +247,7 @@ def main():
                     
                     # <2> Mortgage a currently owned property
                     elif choice == "2":
-                        mortgage_property(player=current_player, game_board=game_board)
+                        mortgage_property(player=current_player, game_board=game_board, menu=menu)
 
                     # <3> Trade with another player
                     elif choice == "3":
