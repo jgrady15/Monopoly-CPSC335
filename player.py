@@ -1,3 +1,6 @@
+import random
+import math
+
 # A board game engine that can simulate the movement of players around the board and handle the different properties, spaces, and events on the board.
 # A function to roll the dice and move the player's token a certain number of spaces around the board.
 # A function to manage the purchase and sale of properties, including the ability to buy and sell houses and hotels, and to pay rent to other players.
@@ -32,9 +35,7 @@ class Player:
         self.wealth = 1_500         # Total wealth is cash + assets: cash is considered an asset
         self.rolled_dice = False    # By default, this variable is false, ONLY TRIGGER TRUE AFTER PLAYER HAS ROLLED DICE
         self.inventory = {}         # Stores cards
-        self.properties = {}        # Stores possible bought properties
-        self.utilities = {}         # Stores possible bought utilities
-        self.railroads = {}         # Stores possible bought railroads
+        self.assets = []            # Stores possible bought properties, utilities, and railroads as their names, we cross-reference their names with the variables in board.py
         self.in_jail = False        # Player does not start in jail
         self.turns_in_jail = 0      # Player does not have any moves in jail until they land on a "Go to Jail" tile
     
@@ -44,9 +45,30 @@ class Player:
     def pay_rent(self, property, rent):
         self.money -= rent
 
+    def inspect_player(self, current_player, players, game_board, menu):
+        menu.clear_screen()
+        for i in range(len(players)):
+            if players[i] is not current_player:
+                print(f"<{i + 1}> {players[i].name}")
+        choice = input("Which player did you want to look at? ")
+
+    def upgrade_assets(self, game_board, menu):
+        menu.display_player_assets(self)
+
+
     def trade_with_player(self, other_player, property, money):
         self.properties.remove(property)
         self.money += money
         other_player.properties.append(property)
         other_player.money -= money
+    
+    # Function is broken, need to find some way to calculate all values of all assets
+    def __update_wealth(self):
+        self.wealth = self.money + math.sum(self.assets.values()["price"])
+
+    def deduct_money(self, amount):
+        self.money -= amount
+        self.__update_wealth()
+        pass
+
 
