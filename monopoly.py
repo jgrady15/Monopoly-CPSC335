@@ -1,6 +1,7 @@
 import platform
 import random
 from board import Board
+from menu import Menu
 from player import Player
 import time
 import os
@@ -50,30 +51,6 @@ from gmpy2 import mpz
 # Once a player has declared bankruptcy and been eliminated from the game, the remaining players continue to 
 # play as normal. The game ends when only one player remains, at which point they are declared the winner.
 
-
-#############################################################################
-# Functional Methods:
-# These methods are unrelated to the game
-#############################################################################
-def error_message(message, duration) -> None:
-    clear_screen()
-    print(message)
-    time.sleep(duration)
-    clear_screen()
-
-def clear_screen() -> None:
-    os_name = platform.system()
-    if os_name == "Windows" or os_name == "Linux":
-        os.system('cls')
-    elif os_name == "Darwin":
-        os.system('clear')
-
-def print_message(message, duration):
-    clear_screen()
-    print(message)
-    time.sleep(duration)
-    clear_screen()
-
 #############################################################################
 # Functional Game Methods 
 #############################################################################
@@ -82,152 +59,110 @@ def create_player(amount) -> list:
     tokens = ["Car", "Hat", "Dog", "Shoe", "Thimble", "Wheelbarrow", "Horse", "Battleship"]
     for i in range(0, amount):
         name = "Player " + str(i + 1)
-        players.append(Player(name, tokens.pop(random.randint(1, len(tokens) - 1))))
+        players.append(Player(name, tokens.pop(random.randint(0, len(tokens) - 1))))
     
     print(players)
     return players
 
-# Function to: 
-# 1. Roll the dice
-# 2. Animate the rolling die
-# 3. Output where the player has landed on
-# Returns a tuple 
-def roll_dice(player) -> tuple:
-    def roll():
-        # Print the rolling animation
-        for i in range(5):
-            # Clear the screen
-            clear_screen()
-        
-            # Generate a random dice roll
-            dice = random.randint(1, 6)
-            print(f"Rolling die... {dice}")
-            time.sleep(0.09)
-        return dice
-
-    # Clear the screen
-    clear_screen()
-    dice1 = roll()
-    dice2 = roll()
-
-    clear_screen()
-    print(f"{player.name} rolled {dice1} and {dice2}!")
-    time.sleep(2.25)
-
-    return (dice1, dice2)
-
-# 
-def display_player_turn(player) -> None:
-    print_message("It is now your turn, " + player.name, duration=2.25)
-
 #
-def display_normal_menu() -> int:
-    print("\n<1> Roll the dice")
-    print("<2> Mortgage a currently owned property")
-    print("<3> Trade with another player")
-    print("<4> Inspect another player's assets")
-    print("<5> Sell a currently owned property")
-    print("<6> End your current turn")
-    choice = input("\nWhat would you like to do? ")
-    return choice
-
-#
-def display_jail_menu(player) -> int:
-    print(f"\n\n* TURNS LEFT IN JAIL: {player.turns_in_jail}")
-    print("<1> Roll the dice")
-    print("<2> Mortgage a currently owned property")
-    print("<3> Trade with another player")
-    print("<4> Inspect another player's assets")
-    print("<5> Sell a currently owned property")
-    print("<6> End your current turn")
-    print(f"<7> Pay ${player.turns_in_jail * 50} to leave")
-
-    if "Get out of Jail free - This card may be kept until needed, or traded/sold" in player.inventory.keys(): 
-        print("<7> Use your 'Get out of Jail' card")
-
-    choice = input("What would you like to do? ")
-    return choice
-
-#
-def display_player_info(player) -> None:
-    # Print the player's money and properties
-    print("Name:  ----------------------", player.name)
-    print("Token: ----------------------", player.token)
-    print("Total Money: ----------------", player.money)
-    print("Total Accumulated Wealth: ---", player.wealth)
-    print("Currently Owned Properties: -", player.properties)
-
-#
-def display_player_position(tile) -> None:
-    print("\n* You are at " + tile)
-
-#
-def display_tile_info(player, game_board) -> None:
-    tile = game_board.board[player.position]
-    if tile in game_board.properties.keys(): 
-        print("Price of property: ----------", game_board.properties[tile]["price"])
-        print("Cost per house: -------------", game_board.properties[tile]["house_price"])
-        print("Color: ----------------------", game_board.properties[tile]["group"])
-        print("Current Owner: --------------", game_board.properties[tile]["owner"])
-    elif tile in game_board.railroads.keys():
-        print("Price of property: ----------", game_board.railroads[tile]["price"])
-        print("Cost of rent: ---------------", game_board.railroads[tile]["rent"])
-        print("Type: -----------------------", game_board.railroads[tile]["group"])
-        print("Current Owner: --------------", game_board.railroads[tile]["owner"])
-    elif tile in game_board.utilities.keys():
-        print("Price of property: ----------", game_board.utilities[tile]["price"])
-        print("Cost of rent: ---------------", game_board.utilities[tile]["rent"])
-        print("Type: -----------------------", game_board.utilities[tile]["group"])
-        print("Current Owner: --------------", game_board.utilities[tile]["owner"])
-
-#
-def player_in_jail(player, game_board) -> None:
+def player_in_jail(player, game_board, menu) -> None:
     # If the current player is in jail, then we want to display a different menu
     if not player.in_jail:
         return False
     else:
-        tile = game_board.board[player.position]
-        print("\n* You are on Tile: ----------", tile)
-        choice = display_jail_menu(player)
+        # Keep this loop running, as we want to let players in jail continue making whatever moves they want until their turn ends
+        while True:
+            menu.clear_screen()
+            menu.display_player_info(player)
+            tile = game_board.board[player.position]
+            print("\n* You are on Tile: ----------", tile)
+            choice = menu.display_jail_menu(player)
 
-        # <1> Roll the dice
-        if choice == "1":
-            roll_dice(player=player)
-        
-        # <2> Mortgage a currently owned property
-        elif choice == "2":
-            pass
+            # <1> Roll the dice
+            if choice == "1" and not player.rolled_dice:
+                dice = game_board.roll_dice(player)
 
-        # <3> Trade with another player
-        elif choice == "3":
-            pass
-        
-        # <4> Inspect another player's assets
-        elif choice == "4":
-            pass
+                # If the player has rolled a dice and it is a double
+                if dice[0] != dice[1]:
+                    player.rolled_dice = True
+                    player.turns_in_jail -= 1
+                else:
+                    menu.print_message(message=f"You have rolled a {dice[0]} and {dice[1]} have escaped jail!", duration=2.25)
 
-        # <5> Sell a currently owned property
-        elif choice == "5":
-            pass
+                    # Player is no longer in jail
+                    player.in_jail = False
 
-        # <6> Pay $50 to leave
-        elif choice == "6":
-            pass
+                    # Player no needs anymore turns in jail
+                    player.turns_in_jail = 0
+                    
+                    # Then we can move the player 
+                    game_board.update_player_position(player=player, dice=dice)
+                    game_board.discover_tile(player)
+                    player.rolled_dice = False
+                    return True
+                    
+            # If they have already rolled it, then display a message telling them to select another option
+            elif choice == "1" and player.rolled_dice:
+                menu.print_message(message="You have already rolled this turn, please select another option", duration=2.25)
+            
+            # <2> Mortgage a currently owned property
+            elif choice == "2":
+                mortgage_property(player=player, game_board=game_board)
 
-        # <7> Use your 'Get out of Jail' card
-        elif choice == "7" and "Get out of Jail free - This card may be kept until needed, or traded/sold" in player.inventory.keys():
-            pass
+            # <3> Trade with another player
+            elif choice == "3":
+                pass
+            
+            # <4> Inspect another player's assets
+            elif choice == "4":
+                pass
 
-        # Invalid choice 
-        else:
-            player_in_jail(player=player, game_board=game_board)
-    
-    return True
+            # <5> Sell a currently owned property
+            elif choice == "5":
+                sell_property(player=player, game_board=game_board)
 
-def update_player_position(player):
-    dice = roll_dice(player=player)
-    # Move the player's token the appropriate number of spaces
-    player.position = (player.position + dice[0] + dice[1]) % 40    
+            # <6> View all owned assets
+            elif choice == "6":
+                menu.display_player_assets(player)
+
+            # <7> Upgrade an asset
+            elif choice == "7":
+                player.upgrade_assets(game_board=game_board, menu=menu)
+
+            # <8> Do not allow the player to end their turn without rolling the dice
+            elif choice == "8" and not player.rolled_dice:
+                menu.print_message(message="You have not yet rolled your dice", duration=2.25)
+
+            # <8> End your current turn only if the player has rolled the dice
+            elif choice == "8" and player.rolled_dice:
+                if player.turns_in_jail == 0:
+                    menu.print_message(message="You have no more turns left in jail, cough up $50 punk!", duration=2.25)
+                    player.money -= 50
+                    player.in_jail = False
+
+                player.rolled_dice = False
+                return True
+            
+            # <9> Pay ${player.turns_in_jail * 50} to leave
+            elif choice == "9":
+                menu.print_message(message="Okay, we'll let you leave then stupid. I hope you don't regret this... >:)", duration=2.25)
+                player.money -= player.turns_in_jail * 50
+                player.in_jail = False
+                player.turns_in_jail = 0
+                player.rolled_dice = False
+                return True
+
+            # <0> Use your 'Get out of Jail' card
+            elif choice == "0" and "Get out of Jail free - This card may be kept until needed, or traded/sold" in player.inventory.keys():
+                menu.print_message(message="WHAT... Okay, if the bank says so, then we have no choice but to comply...", duration=2.25)
+                player.in_jail = False
+                player.turns_in_jail = 0
+                player.rolled_dice = False
+                return True
+
+            # Invalid choice 
+            else:
+                menu.error_message(message="Invalid choice, please try again", duration=2.25)
 
 #############################################################################
 # Game Feature Methods 
@@ -246,238 +181,65 @@ def mortgage_property(player, game_board):
 def sell_property(player, game_board):
     pass
 
-def begin_trade(player1, player2):
+def trade(player1, player2):
     pass
 
-#############################################################################
-# Game Feature Methods <EVENTS>
-#############################################################################
-# TODO: 12/13/22 Finish this function
-def check_property_tile(player, game_board) -> bool:
-    tile = game_board.board[player.position]
-
-    # We can reduce overhead code using this initial edge case statement
-    if tile not in game_board.properties.keys():
-        return False
-    
-    # Checks if the tile is a property that has no owner, if so then the player has "discovered" it
-    # This triggers an event that will prompt the user if they want to purchase this set of land
-    if game_board.properties[tile]["owner"] is None:
-        print_message(message=player.name + " has discovered " + tile + "!", duration=2.25)
-        
-        if player.money >= game_board.properties[tile]["price"]:
-            while True:
-                display_tile_info(player=player, game_board=game_board)
-                print("___________________________________________________")
-                print("| \n| <Y> to purchase\n| <N> to move on")
-                choice = input(f"| \n| Would you like to purchase {tile}?\n| ...> ").lower()
-                if choice == "y":
-                    break
-                elif choice == "n":
-                    break
-                else:
-                    print_message(message="Invalid option, try again.", duration=1.25)
-        else:
-            print_message(message="The top G says that you're a brokie that doesn't even have enough money to buy this cheap plot of land!", duration=1.75)
-            print_message(message="... Get out of here!", duration=1.75)
-
-    # If the tile the player has landed on is owned by another person, then we trigger the "rent" feature
-    elif game_board.properties[tile]["owner"] is not None:
-        print_message(message=player.name + " has landed on " + tile + "!", duration=2.25)
-
-        # 1. We inform the player that they must pay rent
-        # 2. We check if the current player can "afford" to pay rent
-        # 2a. Check if the player will be busted from this, if so, hand over all assets to the other player, and then remove this player from the game
-        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
-        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
-        # 2d. If they still cannot pay, check if they are able to hand over any assets 
-        # 3. We deduct the amount of money from the current player
-        # 4. We increment the amount of money to the owed player
-    
-    return True
-    
-# TODO: 12/13/22 Finish this function
-def check_railroad_tile(player, game_board) -> bool:
-    tile = game_board.board[player.position]
-
-    # If the current tile is not a railroad, then we do not need to execute the following statements, we can just return False
-    if tile not in game_board.railroads.keys():
-        return False
-
-    # After the edge case, we can reduce overhead code and check if the current railroad has an owner "player"
-    # Checks if the tile is a property that has no owner, if so then the player has "discovered" it
-    # This triggers an event that will prompt the user if they want to purchase this set of land
-    if game_board.railroads[tile]["owner"] is None:
-        print_message(message=player.name + " has discovered " + tile + "!", duration=2.25)
-        
-        if player.money >= game_board.railroads[tile]["price"]:
-            while True:
-                display_tile_info(player=player, game_board=game_board)
-                print("___________________________________________________")
-                print("| \n| <Y> to purchase\n| <N> to move on")
-                choice = input(f"| \n| Would you like to purchase {tile}?\n| ...> ").lower()
-                if choice == "y":
-                    break
-                elif choice == "n":
-                    break
-                else:
-                    print_message(message="Invalid option, try again.", duration=1.25)
-
-        else:
-            print_message(message="Brokie beta male isn't sigma alpha phi kappa enough to buy this cheap railroad!", duration=1.75)
-            print_message(message="... Get out of my sight loser!", duration=1.75)
-
-    # If the tile the player has landed on is owned by another person, then we trigger the "rent" feature
-    elif game_board.railroads[tile]["owner"] is not None:
-        print_message(message=player.name + " has landed on " + tile + "!", duration=2.25)
-
-        # 1. We inform the player that they must pay rent
-        # 2. We check if the current player can "afford" to pay rent
-        # 2a. Check if the player will be busted from this, if so, hand over all assets to the other player, and then remove this player from the game
-        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
-        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
-        # 2d. If they still cannot pay, check if they are able to hand over any assets 
-        # 3. We deduct the amount of money from the current player
-        # 4. We increment the amount of money to the owed player
-
-    return True
-
-# TODO: 12/13/22 Finish this function
-def check_utilities_tile(player, game_board) -> bool:
-    tile = game_board.board[player.position]
-    
-    # If the current tile is not a utility, then we do not need to execute the following statements, we can just return False
-    if tile not in game_board.utilities.keys():
-        return False
-
-    # After the edge case, we can reduce overhead code and check if the current utility has an owner "player"
-    if game_board.utilities[tile]["owner"] is None:
-        print_message(message=player.name + " has discovered " + tile + "!", duration=2.25)
-
-        if player.money >= game_board.utilities[tile]["price"]:
-            while True:
-                display_tile_info(player=player, game_board=game_board)
-                print("___________________________________________________")
-                print("| \n| <Y> to purchase\n| <N> to move on")
-                choice = input(f"| \n| Would you like to purchase {tile}?\n| ...> ").lower()
-                if choice == "y":
-                    break
-                elif choice == "n":
-                    break
-                else:
-                    print_message(message="Invalid option, try again.", duration=1.25)
-
-    elif game_board.utilities[tile]["owner"] is not None:
-        print_message(message=player.name + " has landed on " + tile + "!", duration=2.25)
-
-        owner = game_board.utilities[tile]["owner"]
-        print(f"You now owe rent to {owner}!")
-
-        # 1. We inform the player that they must pay rent
-        # 2. We check if the current player can "afford" to pay rent
-        # 2a. Check if the player will bust from this, if so, hand over all assets to the other player, and then remove this player from the game
-        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
-        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
-        # 2d. If they still cannot pay, check if they are able to hand over any assets 
-        # 3. We deduct the amount of money from the current player
-        # 4. We increment the amount of money to the owed player
-    
-    return True
-
-# Checks all possible events unrelated to properties, utilities, and railroads
-# E.g. chance events like pulling a card, going to jail, free parking, etc.
-# For this function, we do not need an edge case, since we have already confirmed
-# -that this tile HAS to be an event tile
-def check_events_tile(player, game_board):
-    tile = game_board.board[player.position]
-
-    if tile == "Income Tax":
-        # 1. We inform the player that they must pay taxes
-        # 2. We check if the current player can "afford" to pay taxes
-        # 2a. Check if the player will bust from this, if so, hand over all assets to the other player, and then remove this player from the game
-        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
-        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
-        pass
-
-    elif tile == "Chance":
-        
-        pass
-
-    elif tile == "Community Chest":
-        pass
-
-    elif tile == "Go To Jail":
-        
-        pass
-
-    elif tile == "Free Parking":
-        # Do nothing
-        pass
-
-    elif tile == "Luxury Tax":
-        # 1. We inform the player that they must pay rent
-        # 2. We check if the current player can "afford" to pay rent
-        # 2a. Check if the player will bust from this, if so, hand over all assets to the other player, and then remove this player from the game
-        # 2b. Then we check how many players are still alive, if the amount is > 2, then we keep playing, otherwise the last player will be declared the winner
-        # 2c. If they cannot, check if the player has any assets they would like to sell to pay rent
-        pass
-
-# Function is designed to discover a tile that a player
-# has not yet bought or owned, or trigger all possible event
-def discover_tile(player, game_board):
-    tile = game_board.board[player.position]
-
-    if   check_property_tile(player=player, game_board=game_board):  return
-    elif check_railroad_tile(player=player, game_board=game_board):  return
-    elif check_utilities_tile(player=player, game_board=game_board): return
-    elif check_events_tile(player=player, game_board=game_board):    return
-
 def main():
-    # This is the game loop
-    running = True
     print(" ____________________________________________________")
     print("|                                                    |")
     print("|    Welcome to my text-based version of Monopoly!   |")
     print("|    This engine can only hold 2-8 players at most   |")
     print("|____________________________________________________|")            
     amount = mpz(input("\nTo start a new game, how many players would you like to create? "))
+    menu = Menu()
     if amount < 2 or amount > 8:
-        clear_screen()
-        error_message(message="INVALID, enter a value between 2 and 8.", duration=2.25)
-        clear_screen()
+        menu.error_message(message="INVALID, enter a value between 2 and 8.", duration=2.25)
         main()
     
     game_board = Board()
     players = create_player(amount)
+    
+    # This is the game loop
+    running = True
     while running:
 
         # Loops infinitely and checks each players until a player has "won" the game
         for i in range(len(players)):
             current_player = players[i]
-            display_player_turn(player=current_player)
+            menu.display_player_turn(current_player)
 
             # TODO: Create another while loop that allows the player to keep making moves, until they have ended their turn
             while True:
-                clear_screen()
+                menu.clear_screen()
                 # Displays all the information the player needs to play this game, like current tile, and playercard info    
-                display_player_info(player=current_player)
-                display_tile_info(player=current_player, game_board=game_board)
-                display_player_position(tile=game_board.board[current_player.position])
+                menu.display_player_info(current_player)
+                menu.display_player_position(game_board.board[current_player.position])
 
                 # Then we check if the player is in jail, if they are, then we display another menu inside of this function
                 if not current_player.in_jail:
-                    choice = display_normal_menu()
+                    choice = menu.display_normal_menu()
 
                     # Only let the player roll the dice if they have not rolled it already
                     # <1> Roll the dice
                     if choice == "1" and not current_player.rolled_dice:
-                        update_player_position(player=current_player)
-                        discover_tile(player=current_player, game_board=game_board)
-                        current_player.rolled_dice = True
+                        dice = game_board.roll_dice(current_player)
+                        
+                        # If the die rolled is a double, then we allow the player to roll again
+                        if dice[0] == dice[1]:
+                            menu.print_message(message="You rolled a double! You receive another free roll!", duration=2)
+                        else:
+                            current_player.rolled_dice = True
+                        
+                        game_board.update_player_position(player=current_player, dice=dice)
+                        game_board.discover_tile(current_player)
+
+                        # If the current_player ends up going to jail, their turn will now forcibly end.
+                        if current_player.in_jail:
+                            break
                     
                     # If they have already rolled it, then display a message telling them to select another option
                     elif choice == "1" and current_player.rolled_dice:
-                        print_message(message="You have already rolled this turn, please select another option", duration=2.25)
+                        menu.print_message(message="You have already rolled this turn, please select another option", duration=2.25)
                         continue
                     
                     # <2> Mortgage a currently owned property
@@ -486,25 +248,41 @@ def main():
 
                     # <3> Trade with another player
                     elif choice == "3":
+                        # trade()
                         pass
                     
                     # <4> Inspect another player's assets
                     elif choice == "4":
-                        pass
+                        current_player.inspect_player(current_player=current_player, players=players, game_board=game_board)
 
                     # <5> Sell a currently owned property
                     elif choice == "5":
-                        sell_property(player=current_player, game_board=game_board)
+                        current_player.sell_property(player=current_player, game_board=game_board)
                     
-                    # <6> End a player's turn
+                    # print("<6> View all owned assets")
                     elif choice == "6":
+                        menu.display_player_assets(current_player)
+
+                    # print("<7> Upgrade an asset")
+                    elif choice == "7" and len(current_player.assets) > 0:
+                        current_player.upgrade_assets(game_board=game_board, menu=menu)
+                    
+                    elif choice == "7" and len(current_player.assets) == 0:
+                        menu.print_message(message="No assets to upgrade! Purchase a property first!", duration=2.25)
+
+                    # <8> End a player's turn
+                    elif choice == "8" and current_player.rolled_dice:
                         current_player.rolled_dice = False
                         break
 
                     else:
-                        error_message(message="Invalid option", duration=1.25)
+                        menu.error_message(message="Invalid option", duration=1.25)
                 else:
-                    player_in_jail(player=current_player, game_board=game_board)
+                    player_in_jail(player=current_player, game_board=game_board, menu=menu)
+                    break
+                
+                # Update method for wealth
+                # current_player.wealth = current_player.money + current_player.assets
 
 if __name__ == '__main__':
     main()
