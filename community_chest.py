@@ -36,5 +36,6 @@ class Community_Chest:
                     self.used_community_chest_cards.add(number)
                     return number
 
-    def obtain_community_chest_card(self, player):
+    def obtain_community_chest_card(self) -> int:
         number = self.__generate_random_community_chest_card()
+        return number
