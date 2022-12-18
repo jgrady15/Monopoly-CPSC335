@@ -79,8 +79,6 @@ class Menu():
         self.clear_screen()
         for i in range(len(player.assets)):
             print(f"<{i + 1}> {player.assets[i]}")
-        
-        input("Press any key to leave...")
 
     #
     def display_player_position(self, tile) -> None:

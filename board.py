@@ -856,9 +856,9 @@ class Board:
             self.menu.print_message(message="Invalid choice, please choose from either <1> or <2>", duration=2.25)
             self.income_tax(player)
 
-    def update_player_position(self, player, dice) -> None:
+    def update_player_position(self, current_player, dice) -> None:
         # Move the player's token the appropriate number of spaces
-        player.position = (player.position + dice[0] + dice[1]) % 40
+        current_player.position = (current_player.position + dice[0] + dice[1]) % 40
 
 
     def calculate_luxury_tax(self, player):
